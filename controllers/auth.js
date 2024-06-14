@@ -9,8 +9,9 @@ exports.createUser = (req, res, next) => {
     const password = req.body.password
     const errors = validationResult(req)
     if(!errors.isEmpty()){
-        const error = new Error('Email already exist')
+        const error = new Error('Invalid email')
             error.statusCode = 422
+            error.data = errors.array()
             throw error
     }
     bcrypt.hash(password, 12)
@@ -19,7 +20,7 @@ exports.createUser = (req, res, next) => {
         return user.save()
     })
     .then(user => {
-        res.status(201).json({message:'User Created Successfully', user: user})
+        res.status(201).json({message:'Successful'})
     })
     .catch(err => {
         if(!err.statusCode){
@@ -45,13 +46,15 @@ exports.loginUser = (req, res, next) => {
     })
     .then(isEqual => {
         if(!isEqual){
-            const error = new Error('')
+            const error = new Error('invalid log in details')
+            error.statusCode = 422
+            throw error 
         }
         const token = jwt.sign(
             {email: email, userId: confirmedUser._id.toString()},
-            'secretofconfirmedusersecretquestionforbudgetapp', {expiresIn: '1h'}
+            'secretofconfirmedusersecretquestionforbudgetapp', {expiresIn: '2h'}
             )
-        res.status(200).json({message: 'Logged in successfully', token: token, userId: confirmedUser._id.toString()})
+        res.status(200).json({message: 'Logged in successfully', token: token, user: {id: confirmedUser._id.toString(), name: confirmedUser.name}})
       
     })
     .catch(err => {
